@@ -59,7 +59,7 @@ generator client {
 
 Our lambda functions are located in [src/lambdas](./src/lambdas). This will be built into `build/lambdas/*` using Typescript. Check out this [example lambda that inserts a new user](./src/lambdas/insertUser/handler.ts)
 
-## @libs/\*
+### Using @libs/\*
 
 In the sample lambda, we are importing a function to create prisma client:
 
