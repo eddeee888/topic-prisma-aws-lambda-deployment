@@ -26,7 +26,7 @@ A good practice is to keep only the main business logic in the lambda function. 
 All imports should be split into layers. There can be maximum of 5 layers. In this repo, there are 3 types of layers:
 
 - Runtime dependencies - The only dependency runtime dependency here is `uuid` for testing purpose. It should be the only one in `package.json`'s dependencies field.
-- `@prisma/client` - I prefer keeping `@prisma/client` as its own layer because the way it's created is fairly different from other dependencies.
+- `@prisma/*` - I prefer keeping `@prisma/*` and `.prisma` as its own layer because the way it's created is fairly different from other dependencies.
 - `@libs/*` - This includes utility functions that can be shared between lambdas and other apps.
 
 ### Prisma binary and AWS lambda
@@ -53,7 +53,7 @@ generator client {
 
 ### Serverless and AWS lambda
 
-[Serverless](https://www.serverless.com/) is a powerful framework that can help deploy lambdas and apps easily. We will use this service to orchestrate the deployment of our lambda and lambda layers.
+[Serverless](https://www.serverless.com/) is a powerful framework that can help deploy lambdas and apps easily. We will use this service to orchestrate the deployment of our lambda and lambda layers using a [serverless.yml file](./serverless.yml)
 
 ## Lambda functions
 
@@ -67,7 +67,7 @@ In the sample lambda, we are importing a function to create prisma client:
 import { createPrismaClient } from "@libs/prismaClient";
 ```
 
-Locally, we use Typescript to map everything starting with `@libs/*` to [src/libs](./src/libs) using [tsconfig paths config]()
+Locally, we use Typescript to map everything starting with `@libs/*` to [src/libs](./src/libs) using [tsconfig paths config](https://github.com/eddeee888/topic-prisma-aws-lambda-deployment/blob/a80ad9ba5131b31ee321a23777a2c5f83332059d/tsconfig.json#L6-L8)
 
 The prod lambda function will import `@libs/*` from a lambda layer ( more on this later ).
 
@@ -123,7 +123,7 @@ Check out the following scripts that are intended to be run in CI to create the 
 You can use this sample [github action](./.github/workflows/deploy-lambdas.yml) to deploy the lambda functions, together with their layers. Here's a summary of what it does:
 
 - Build `node_modules` lambda layer
-- Build `@prisma/client` lambda layer
+- Build `@prisma/*` lambda layer
 - Build `@libs/*` lambda layer
 - Build lambda functions
 - Once all the previous steps are done, download all built assets and deploy using [serverless.yml](./serverless.yml)
@@ -131,7 +131,8 @@ You can use this sample [github action](./.github/workflows/deploy-lambdas.yml) 
 **Note**
 
 - Each lambda layer build step has been customised to avoid overlapping of dependencies in each layer
-- All assets and `serverless.yml` are moved into `./build/lambdas`. This is because the [SERVICE_ROOT]() option seems to tell serverless include more than it should if `./` is used
+- All assets and `serverless.yml` are moved into `./build/lambdas`. This is because the [SERVICE_ROOT](https://github.com/eddeee888/topic-prisma-aws-lambda-deployment/blob/a80ad9ba5131b31ee321a23777a2c5f83332059d/.github/workflows/deploy-lambdas.yml#L168) option seems to tell serverless include more than it should if `./` is used
+- When deploying, there are some [AWS and Serverless account env variables](https://github.com/eddeee888/topic-prisma-aws-lambda-deployment/blob/a80ad9ba5131b31ee321a23777a2c5f83332059d/.github/workflows/deploy-lambdas.yml#L169-L171) and some are used to map [environment variables for the lambda functions](https://github.com/eddeee888/topic-prisma-aws-lambda-deployment/blob/a80ad9ba5131b31ee321a23777a2c5f83332059d/.github/workflows/deploy-lambdas.yml#L172-L174) in [serverless.yml](https://github.com/eddeee888/topic-prisma-aws-lambda-deployment/blob/a80ad9ba5131b31ee321a23777a2c5f83332059d/serverless.yml#L32-L33)
 
 ---
 
