@@ -1,0 +1,174 @@
+name: Deploy lambdas
+on:
+  push:
+    branches:
+      - "deploy/**"
+
+jobs:
+  build-node_modules-lambda-layer:
+    name: Bld. node_modules layer
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: Install PROD packages
+        run: yarn --production
+
+      - name: Prepare lambda layer
+        run: ./scripts/ci/prepare-node-modules-lambda-layer.sh
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: lambda-layers-node_modules
+          path: ./lambda-layers-node_modules
+
+  build-prisma-client-lambda-layer:
+    name: Bld. @prisma/client layer
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: Install ALL packages
+        run: yarn --frozen-lockfile
+
+      - name: Prepare prisma client
+        run: yarn prisma:generate:prod
+
+      - name: Prepare "@prisma/client" lambda layer
+        run: ./scripts/ci/prepare-prisma-client-lambda-layer.sh
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: lambda-layers-prisma-client
+          path: ./lambda-layers-prisma-client
+
+  build-libs-lambda-layers:
+    name: Bld. @libs layer
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: Install ALL packages
+        run: yarn --frozen-lockfile
+
+      - name: Prepare prisma client
+        run: yarn prisma:generate:prod
+
+      - name: Build assets
+        run: yarn build
+
+      - name: Prepare "@libs/*"" lambda layer
+        run: ./scripts/ci/prepare-libs-lambda-layer.sh
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: lambda-layers-libs
+          path: ./lambda-layers-libs
+
+  build-lambdas:
+    name: Build lambdas
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: Install ALL packages
+        run: yarn --frozen-lockfile
+
+      - name: Prepare prisma client
+        run: yarn prisma:generate:prod
+
+      - name: Build lambdas
+        run: yarn build
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: build-lambdas
+          path: ./build/lambdas
+
+  deploy-lambdas:
+    name: Deploy lambdas
+    needs:
+      [
+        build-node_modules-lambda-layer,
+        build-prisma-client-lambda-layer,
+        build-libs-lambda-layers,
+        build-lambdas,
+      ]
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-lambdas
+          path: ./build/lambdas
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: lambda-layers-node_modules
+          path: ./build/lambdas/lambda-layers-node_modules
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: lambda-layers-libs
+          path: ./build/lambdas/lambda-layers-libs
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: lambda-layers-prisma-client
+          path: ./build/lambdas/lambda-layers-prisma-client
+
+      - name: Unzip layers
+        run: |
+          tar -C ./build/lambdas/lambda-layers-node_modules -xf ./build/lambdas/lambda-layers-node_modules/nodejs.tar.gz
+          rm -rf ./build/lambdas/lambda-layers-node_modules/nodejs.tar.gz
+          tar -C ./build/lambdas/lambda-layers-libs -xf ./build/lambdas/lambda-layers-libs/nodejs.tar.gz
+          rm -rf ./build/lambdas/lambda-layers-libs/nodejs.tar.gz
+          tar -C ./build/lambdas/lambda-layers-prisma-client -xf ./build/lambdas/lambda-layers-prisma-client/nodejs.tar.gz
+          rm -rf ./build/lambdas/lambda-layers-prisma-client/nodejs.tar.gz
+
+      - name: Move serverless.yml
+        run: mv serverless.yml ./build/lambdas/serverless.yml
+
+      - name: Deploy lambdas and layers
+        uses: aaronpanch/action-serverless@master
+        with:
+          args: deploy --debug
+        env:
+          SERVICE_ROOT: ./build/lambdas
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_CI }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_CI }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          PRISMA_DATABASE_URL: ${{ secrets.PRISMA_DATABASE_URL }}
+          PRISMA_BINARY_TARGET: rhel-openssl-1.0.x

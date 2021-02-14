@@ -1,0 +1,37 @@
+service: prisma-aws-lambda-deployment
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: prod
+  region: ${env:AWS_REGION}
+  # vpc:
+  #   securityGroupIds:
+  #     -  # FILLME
+  #   subnetIds:
+  #     -  # FILLME
+  #     -  # FILLME
+
+layers:
+  TopicPrismaAwsNodeModules:
+    path: lambda-layers-node_modules
+  TopicPrismaAwsLibs:
+    path: lambda-layers-libs
+  TopicPrismaAwsPrismaClient:
+    path: lambda-layers-prisma-client
+
+functions:
+  insertUserCron:
+    handler: insertUser/handler.default
+    memorySize: 512
+    timeout: 290 # 4 minutes 50 seconds
+    events:
+      - schedule: rate(5 minutes)
+    environment:
+      NODE_ENV: production
+      PRISMA_DATABASE_URL: ${env:PRISMA_DATABASE_URL}
+      PRISMA_BINARY_TARGET: ${env:PRISMA_BINARY_TARGET}
+    layers:
+      - { Ref: TopicPrismaAwsNodeModulesLambdaLayer }
+      - { Ref: TopicPrismaAwsLibsLambdaLayer }
+      - { Ref: TopicPrismaAwsPrismaClientLambdaLayer }
