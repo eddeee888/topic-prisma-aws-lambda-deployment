@@ -1,0 +1,23 @@
+{
+  "name": "topic-prisma-aws-lambda-deployment",
+  "version": "1.0.0",
+  "description": "Deploying Prisma using AWS lambda, lambda layers and Serverless.",
+  "repository": "git@github.com:eddeee888/topic-prisma-aws-lambda-deployment.git",
+  "author": "Eddy Nguyen <eddeee.nguyen@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "prisma:generate:prod": "PRISMA_BINARY_TARGET=rhel-openssl-1.0.x prisma generate"
+  },
+  "devDependencies": {
+    "@prisma/client": "2.16.1",
+    "@types/node": "12.19.16",
+    "@types/uuid": "8.3.0",
+    "prisma": "2.16.1",
+    "ts-node": "9.1.1",
+    "typescript": "4.1.5"
+  },
+  "dependencies": {
+    "uuid": "8.3.0"
+  }
+}
