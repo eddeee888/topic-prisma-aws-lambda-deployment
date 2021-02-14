@@ -130,7 +130,8 @@ You can use this sample [github action](./.github/workflows/deploy-lambdas.yml) 
 
 **Note**
 
-- Each lambda layer build step has been customised to avoid overlapping of dependencies in each layer
+- Each lambda layer build step has been customised to avoid overlapping of dependencies in each layer.
+- Each lambda layer [is unzipped before being deployed](https://github.com/eddeee888/topic-prisma-aws-lambda-deployment/blob/1738d2ae2e1a6a44b45eefb76bc19d02254b4c41/.github/workflows/deploy-lambdas.yml#L151-L158) because Serverless zips them by default.
 - All assets and `serverless.yml` are moved into `./build/lambdas`. This is because the [SERVICE_ROOT](https://github.com/eddeee888/topic-prisma-aws-lambda-deployment/blob/a80ad9ba5131b31ee321a23777a2c5f83332059d/.github/workflows/deploy-lambdas.yml#L168) option seems to tell serverless include more than it should if `./` is used
 - When deploying, there are some [AWS and Serverless account env variables](https://github.com/eddeee888/topic-prisma-aws-lambda-deployment/blob/a80ad9ba5131b31ee321a23777a2c5f83332059d/.github/workflows/deploy-lambdas.yml#L169-L171) and some are used to map [environment variables for the lambda functions](https://github.com/eddeee888/topic-prisma-aws-lambda-deployment/blob/a80ad9ba5131b31ee321a23777a2c5f83332059d/.github/workflows/deploy-lambdas.yml#L172-L174) in [serverless.yml](https://github.com/eddeee888/topic-prisma-aws-lambda-deployment/blob/a80ad9ba5131b31ee321a23777a2c5f83332059d/serverless.yml#L32-L33)
 
