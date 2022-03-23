@@ -138,8 +138,6 @@ You can use this sample [github action](./.github/workflows/deploy-lambdas.yml) 
 ---
 
 Made with ❤️ by Eddy Nguyen
-https://eddy.works
+https://eddeee888.me
 
 This repo is extracted from https://github.com/eddeee888/base-app-monorepo
-
-Need coding mentorship? Request a session here: https://jooclass.com/classes/2
